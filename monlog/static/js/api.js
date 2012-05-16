@@ -14,7 +14,7 @@
 */
 
 var pendingData;
-var timeoutTime = 5000;
+var timeoutTime = 10000;
 var lastDisplayedDatetime;
 
 // These variables is related to lazyloading
