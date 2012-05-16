@@ -1,6 +1,7 @@
 from tastypie.validation import Validation
 from monlog.log.models import LogMessage
 from django.contrib.auth.models import User
+from django.utils import timezone
 from datetime import datetime
 import simplejson as json
 
@@ -17,7 +18,7 @@ class LogValidation(Validation):
         data.update(client_ip)
         data.update(get_dict)
         desc = json.dumps(data)
-        current_date = datetime.now()
+        current_date = timezone.now()
         monlog_user = User.objects.get(username="monlog")
         severity = 4 # Error
         server_ip = "127.0.0.1"

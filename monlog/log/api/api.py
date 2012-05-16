@@ -1,7 +1,9 @@
 #REST API
 
+import pytz
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.utils import timezone
 from tastypie import fields
 from tastypie.resources import ModelResource, ALL
 from tastypie.authorization import DjangoAuthorization
@@ -122,9 +124,14 @@ class LogResource(ModelResource):
     def hydrate(self, bundle):
         bundle.obj.application = bundle.request.user
         bundle.obj.server_ip = bundle.request.META['REMOTE_ADDR']
-        timestamp = bundle.data["timestamp"]
-        _datetime = datetime.utcfromtimestamp(float(timestamp))
-        bundle.obj.datetime = _datetime
+        if 'timestamp' in bundle.data:
+            timestamp = bundle.data["timestamp"]
+            try:
+                _datetime = datetime.utcfromtimestamp(float(timestamp))
+                _datetime = timezone.make_aware(_datetime, pytz.UTC)
+                bundle.obj.datetime = _datetime
+            except ValueError:
+                bundle.obj.datetime = None
         # truncate short_desc if it's too long.
         if 'short_desc' in bundle.data:
             if len(bundle.data["short_desc"]) > 100:
