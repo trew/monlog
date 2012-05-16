@@ -194,6 +194,16 @@ class RestTest(MonlogTestCase):
         resp = self.client.post(self.api_uri + testapp.api_key.key, json.dumps(data), content_type='application/json')
         self.assertEqual(resp.status_code, 201) # CREATED
 
+        # Post with microsecond timestamp
+        data = {"severity": 0,
+                "timestamp" : "1335169880.123"}
+        resp = self.client.post(self.api_uri + testapp.api_key.key, json.dumps(data), content_type='application/json')
+        self.assertEqual(resp.status_code, 201) #201=CREATED
+        t = datetime.utcfromtimestamp(float("1335169880.123"))
+        self.assertNotEqual(LogMessage.objects.get(datetime=t),
+                                LogMessage.DoesNotExist)
+
+
         # Successful post and wellformed post
         data = {"severity": 0,
                 "timestamp" : "1335169880",
