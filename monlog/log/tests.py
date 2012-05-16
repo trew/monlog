@@ -162,7 +162,7 @@ class RestTest(MonlogTestCase):
         data = {"severity": 0 , "timestamp" : "1335169880" } #wellformed data
         resp = self.client.post("/api/log/", data)
         self.assertEqual(resp.status_code, 401) #Unauthorized
-            
+
     def test_post(self):
         """
         Tests various types of content we're trying to submit. 
@@ -173,13 +173,12 @@ class RestTest(MonlogTestCase):
         data = {"severity": 0}
         resp = self.client.post(self.api_uri + testapp.api_key.key, json.dumps(data), content_type='application/json')
         self.assertEqual(resp.status_code, 400)
-        
-        # Datetime malformed, missing lots of stuff
+
+        # Datetime malformed, we only accept unix timestamps
         data = {"severity": 0,
                 "timestamp" : "2001-02-22T12:12:12Z"}
         resp = self.client.post(self.api_uri + testapp.api_key.key, json.dumps(data), content_type='application/json')
         self.assertEqual(resp.status_code, 400)
-
 
         # Severity out of scope
         data = {"severity": 15,
