@@ -92,7 +92,6 @@ class MonlogCronTest(TestCase):
         self.assertEqual(exp.deadline.month, 2)
         self.assertEqual(exp.deadline.day, 28)
 
-        
 class MonlogTestCase(TestCase):
     fixtures = ['auth.json']
 
@@ -102,14 +101,16 @@ class MonlogTestCase(TestCase):
 class ModelTest(MonlogTestCase):
 
     def setUp(self):
-        login = self.client.login(username=self.username, password=self.userpass)
+        login = self.client.login(username=self.username,
+                                  password=self.userpass)
         if not login:
             print "Couldn't log in!"
 
     def test_save_label(self):
         """ Testing if label saving works """
 
-        # Check for HttpResponseBadRequest if `name` or `query_string` not provided.
+        # Check for HttpResponseBadRequest if `name` or `query_string`
+        # not provided.
         data = {}
         response = self.client.post("/label/save/", data)
         self.assertEqual(response.status_code, 400)
@@ -127,13 +128,17 @@ class RestTest(MonlogTestCase):
 
     def setUp(self):
         """
-        Creates an api key for test user(from fixture) and sets permission to add logmessages
+        Creates an api key for test user(from fixture) and sets permission to
+        add logmessages.
         """
         super(RestTest, self).setUp()
         ApiKey.objects.all().delete()
-        create_api_key(User, instance=User.objects.get(username=self.username), created=True)
+        create_api_key(User,
+                       instance=User.objects.get(username=self.username),
+                       created=True)
         add_logmessage = Permission.objects.get(codename='add_logmessage')
-        User.objects.get(username=self.username).user_permissions.add(add_logmessage)
+        User.objects.get(username=self.username)\
+                    .user_permissions.add(add_logmessage)
 
 
     def test_auth(self):
@@ -143,14 +148,16 @@ class RestTest(MonlogTestCase):
         auth = MonlogAuthentication()
         request = HttpRequest()
 
-        testapp = User.objects.get(username=self.username) #API key created in setUp()
-        request.GET['api_key'] = testapp.api_key.key 
+        #API key created in setUp()
+        testapp = User.objects.get(username=self.username)
+        request.GET['api_key'] = testapp.api_key.key
 
         self.assertEqual(auth.is_authenticated(request), True)
 
     def test_get_from_rest(self):
         """
-        Testing if we can use GET-method from the rest api. This should not be possible.
+        Testing if we can use GET-method from the rest api. This should not be
+        possible.
         """
         response = self.client.get("/api/log/")
         self.assertEqual(response.status_code, 405) #Method not allowed
@@ -166,19 +173,23 @@ class RestTest(MonlogTestCase):
 
     def test_post(self):
         """
-        Tests various types of content we're trying to submit. 
+        Tests various types of content we're trying to submit.
         """
         testapp = User.objects.get(username=self.username)
 
         # Missing timestamp
         data = {"severity": 0}
-        resp = self.client.post(self.api_uri + testapp.api_key.key, json.dumps(data), content_type='application/json')
+        resp = self.client.post(self.api_uri + testapp.api_key.key,
+                                json.dumps(data),
+                                content_type='application/json')
         self.assertEqual(resp.status_code, 400)
 
         # Datetime malformed, we only accept unix timestamps
         data = {"severity": 0,
                 "timestamp" : "2001-02-22T12:12:12Z"}
-        resp = self.client.post(self.api_uri + testapp.api_key.key, json.dumps(data), content_type='application/json')
+        resp = self.client.post(self.api_uri + testapp.api_key.key,
+                                json.dumps(data),
+                                content_type='application/json')
         self.assertEqual(resp.status_code, 400)
 
         # Severity out of scope
@@ -186,29 +197,36 @@ class RestTest(MonlogTestCase):
                 "timestamp" : "1335169880",
                 "long_desc" : "data",
                 "short_desc" : "This is a short description"}
-        resp = self.client.post(self.api_uri + testapp.api_key.key, json.dumps(data), content_type='application/json')
+        resp = self.client.post(self.api_uri + testapp.api_key.key,
+                                json.dumps(data),
+                                content_type='application/json')
         self.assertEqual(resp.status_code, 400)
 
         # long_desc or short_desc is possible to be without
         data = {"severity": 0,
                 "timestamp" : "1335169660"} 
-        resp = self.client.post(self.api_uri + testapp.api_key.key, json.dumps(data), content_type='application/json')
+        resp = self.client.post(self.api_uri + testapp.api_key.key,
+                                json.dumps(data),
+                                content_type='application/json')
         self.assertEqual(resp.status_code, 201) # CREATED
 
         # Post with microsecond timestamp
         # NOTE!
         # Support of fractional timestamps isn't supported yet.
-        # That is what the second assert checks for, and it will fail ofcourse.
+        # The second assert checks for that, and it will fail ofcourse.
         # Therefore it is commented.
         data = {"severity": 0,
                 "timestamp" : "1335169880.123"}
-        resp = self.client.post(self.api_uri + testapp.api_key.key, json.dumps(data), content_type='application/json')
+        resp = self.client.post(self.api_uri + testapp.api_key.key,
+                                json.dumps(data),
+                                content_type='application/json')
         self.assertEqual(resp.status_code, 201) #201=CREATED
-        t = datetime.utcfromtimestamp(float("1335169880.123")).replace(tzinfo=pytz.utc)
+        t = datetime.utcfromtimestamp(float("1335169880.123"))
+        t = t.replace(tzinfo=pytz.utc)
         logmessage_datetime = LogMessage.objects.get(datetime=t).datetime
         if (logmessage_datetime != t):
-            warnings.warn("Fraction of datetime (%s) were lost. " % t\
-                        + "Are you using MySQL <5.6.4 ?",
+            warnings.warn(u"Fraction of datetime (%s) were lost. "
+                          u"Are you using MySQL <5.6.4 ?" % t,
                           RuntimeWarning)
         #self.assertEqual(logmessage_datetime, t)
 
@@ -219,6 +237,8 @@ class RestTest(MonlogTestCase):
                 "long_desc" : "This is a long description",
                 "short_desc" : "This is a short description"}
 
-        resp = self.client.post(self.api_uri + testapp.api_key.key, json.dumps(data), content_type='application/json')
+        resp = self.client.post(self.api_uri + testapp.api_key.key,
+                                json.dumps(data),
+                                content_type='application/json')
         self.assertEqual(resp.status_code, 201) #201=CREATED
 
